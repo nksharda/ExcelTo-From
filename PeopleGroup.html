@@ -1,0 +1,179 @@
+<html xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
+<head>
+<script
+src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<script type="text/javascript" src="_layouts/15/clienttemplates.js"></script>
+<script type="text/javascript" src="_layouts/15/clientforms.js"></script>
+<script type="text/javascript" src="_layouts/15/clientpeoplepicker.js"></script>
+<script type="text/javascript" src="_layouts/15/autofill.js"></script>
+
+
+</head>
+<body>
+
+ firat name <input type="text" id="test">
+
+<label>User Name:</label>
+<input type ="button" value="+" id="Add"/> <input type="button" id="Remove" value="-"/>
+<input type="button" value="Click me" onclick="ensureUser()">
+ <div id="parent"></div>
+
+
+<hr>
+
+<table id="Current_Resources" class="" style="width: 100%; border-color: white;">
+<thead>
+    <tr  style="width:100%">
+    <th style="background-color: #4287f5; text-align: left; width: 75%;">&nbsp;<i class="fa fa-plus" aria-hidden="true" id="C_Resources" name="C_Resources"></i>&nbsp;&nbsp;Current Resources</th>
+    <th style="background-color: #4287f5; text-align:left; width: 25%;">Utilization %</th>
+    </tr>
+</thead>
+<tbody>
+    <tr>
+        <!--<td><input type="text" placeholder="Enter Current Resource Name" id="R_Name" name="R_Name" style="width: 100%;"></td>-->
+        <!--<td><input type="text" placeholder="" id="risk" style="float:right;width:98px;"></td>-->
+    </tr>
+</tbody>
+</table>
+ 
+<script>
+
+$(document).ready(function() 
+{ 
+    debugger;
+    var count = 0;
+    $("#Add").on("click", function() 
+    { 
+        $('#parent').append('<div id="first'+count+'" name="dynamic"></div>');
+        initializePeoplePicker('first'+count);   
+        count++;
+    });  
+    
+    $("#Remove").on("click", function() 
+    {  
+        debugger;
+        $("#parent").children().last().remove();  
+            initializePeoplePicker('first'+count); 
+        });  
+    });  
+</script>
+
+<script>
+
+function initializePeoplePicker(peoplePickerElementId) 
+{
+    var schema = {};
+    schema['PrincipalAccountType'] = 'User,DL,SecGroup,SPGroup';
+    schema['SearchPrincipalSource'] = 15;
+    schema['ResolvePrincipalSource'] =15;
+    schema['AllowMultipleValues'] = false;
+    schema['MaximumEntitySuggestions'] =50;
+    schema['Width'] = '50px';
+    this.SPClientPeoplePicker_InitStandaloneControlWrapper(peoplePickerElementId,null, schema);
+}
+
+var UserId;
+var listname = "EMP";
+
+function saveUser(UserId) 
+{
+    debugger;
+    var firstname=$('#test').val();
+    // ensureUser();
+    $.ajax({
+        url: _spPageContextInfo.webAbsoluteUrl + "/_api/web/lists/GetByTitle('"+listname+"')/items",
+        type: "POST",
+        async: false,
+        data: JSON.stringify({__metadata: {type: "SP.Data.EMPListItem"  },
+            TEST:firstname,
+            dx7bId: UserId
+        }),
+        headers: {  
+			"Accept": "application/json;odata=verbose",  
+			"Content-Type": "application/json;odata=verbose",  
+			"X-RequestDigest": $("#__REQUESTDIGEST").val(),  
+			"X-HTTP-Method": "POST",
+		},
+        success: function(data){
+            alert("User Name is saved successfully");
+            location. reload(true);
+        },
+        error: function(error){
+            alert(JSON.stringify(error));
+       }
+    });
+ 
+ }
+
+function ensureUser() 
+{
+    debugger;
+    var values='';
+    $(".sp-peoplepicker-topLevel").each(function (index, value) 
+    {  
+        values = $(this).attr('id');
+        // alert(values);
+        getUserInfo(values)
+    });
+}
+
+    //   Query the picker for user information.  
+    // PeoplepickerId = Id of the people picker  
+function getUserInfo(values) 
+{  
+    // Get the people picker object from the page.  
+    var peoplePicker = this.SPClientPeoplePicker.SPClientPeoplePickerDict[values];  
+    if (!peoplePicker.IsEmpty()) 
+    {  
+        if (peoplePicker.HasInputError) return false; // if any error  
+        else if (!peoplePicker.HasResolvedUsers()) return false; // if any invalid users  
+        else if (peoplePicker.TotalUserCount > 0) 
+        {  
+            // Get information about all users.  
+            var users = peoplePicker.GetAllUserInfo();  
+            var userInfo = '';  
+            var promise = '';  
+            for (var i = 0; i < users.length; i++) 
+            { 
+                var UsersID;
+                UsersID += GetUserID(users[i].Key);  
+            }  
+            return UsersID;  
+        }  
+    } else 
+    {  
+        return UsersID;  
+    }  
+} 
+
+function GetUserID(logonName) 
+{  
+    var item = {'logonName': logonName,};  
+    
+    var UserId = $.ajax({  
+        url: _spPageContextInfo.siteAbsoluteUrl + "/_api/web/ensureuser",  
+        type: "POST",  
+        async: false,  
+        contentType: "application/json;odata=verbose",  
+        data: JSON.stringify(item),  
+        headers: {  
+            "Accept": "application/json;odata=verbose",  
+            "X-RequestDigest": $("#__REQUESTDIGEST").val()  
+        },  
+        success: function(data, status, xhr) 
+        {  	
+		   debugger;
+           UserId = data.d.Id;
+           saveUser(UserId);			
+	    },
+		error: function(xhr, status, error) {  	 
+		} 
+    });  
+    return UserId;  
+}    
+
+</script>
+</body>
+</html>
