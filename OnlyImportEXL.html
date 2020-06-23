@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/xlsx.full.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/jszip.js"></script>
+<script type="text/javascript">
+    function Upload() {
+        //Reference the FileUpload element.
+        var fileUpload = document.getElementById("fileUpload");
+ 
+        //Validate whether File is valid Excel/doc file.
+        var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xls|.xlsx|.doc|.docx|.txt|.jpg|.jpeg|.png)$/;
+        //debugger;
+        if (regex.test(fileUpload.value.toLowerCase())) {
+            if (typeof (FileReader) != "undefined") {
+                var reader = new FileReader();
+ 
+                //For Browsers other than IE.
+                if (reader.readAsBinaryString) {
+                    reader.onload = function (e) {
+                        ProcessExcel(e.target.result);
+                    };
+                    reader.readAsBinaryString(fileUpload.files[0]);
+                } else {
+                    //For IE Browser.
+                    reader.onload = function (e) {
+                        var data = "";
+                        var bytes = new Uint8Array(e.target.result);
+                        for (var i = 0; i < bytes.byteLength; i++) {
+                            data += String.fromCharCode(bytes[i]);
+                        }
+                        ProcessExcel(data);
+                    };
+                    reader.readAsArrayBuffer(fileUpload.files[0]);
+                }
+            } else {
+                alert("This browser does not support HTML5.");
+            }
+        } else {
+            alert("Please upload a valid Excel file.");
+        }
+    };
+    function ProcessExcel(data) 
+    {
+        debugger;
+        //Read the Excel File data.
+        var workbook = XLSX.read(data, {    type: 'binary'        });
+  
+        var fileName = "ExcelData.xlsx";
+       
+         //var fileName = uploadFileObj.name;
+        var webUrl = _spPageContextInfo.webAbsoluteUrl;
+        var docLibrary="Shared Documents";
+        //var folderName = "UploadViaCode";
+        var targetUrl = _spPageContextInfo.webServerRelativeUrl + "/" + docLibrary + "/"; // + folderName;
+        
+        var Nurl= webUrl+ "/_api/web/GetFolderByServerRelativeUrl('docLibrary')/Files/add(url='ExcelData.xlsx',overwrite=true)";
+
+        debugger;
+    $.ajax({
+            url: Nurl,
+            method: "POST",
+            body: workbook,
+            async: false,
+            headers: {
+                Authorization: "Bearer",
+                "X-RequestDigest": jQuery("#__REQUESTDIGEST").val(),
+            },
+            success: function (data) {
+                success(data);
+                debugger;
+            },
+            error: function (data) {
+                alert("Failed to create Item! Error: " + data.responseText);
+            return false;
+            }
+        });
+    }
+    </script>    
+      
+</head>
+<body>
+<h1>Hello</h1>
+<br><br><br><center>
+<input type="file" id="fileUpload">
+<input type="button" id="upload" value="Upload" onclick="Upload()">
+<br><br>
+
+</body>
+</html>
+
+<!----Excel file Content-----
+Country     State       District
+India   Andra Pradesh   1. Anantapur
+India   Andra Pradesh   2. Chittoor
+India   Andra Pradesh   3. East Godavari
+India   Andra Pradesh   4. Guntur
+India   Andra Pradesh   5. Kadapa
+India   Andra Pradesh   6. Krishna
+---------------------------->
+<!--
+    $.ajax({
+        url: url,
+        method: "POST",
+        data: AllData,
+        async: false,
+        headers: {
+            "Accept": "application/json;odata=verbose",
+            "Content-Type": "application/json;odata=verbose",
+            "X-RequestDigest": xRequestDigest
+        },
+        success: function (data) {
+            //alert('Item created successfully!');
+        },
+        error: function (data) {
+            //alert("Failed to create Item! Error: " + data.responseText);
+            return false;
+        }
+    });
+}
+</script> 
+
+
+/*method: POST
+body: "Contents of file"
+Headers: 
+    Authorization: "Bearer " + accessToken
+    X-RequestDigest: form digest value
+    content-length:length of post body
+    binaryStringRequestBody: true,           */     
+
+-->
+

@@ -1,0 +1,91 @@
+<html>
+<head>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">-->
+<style>
+</style>
+</head>
+<body>
+<iframe id="txtArea1" style="display:none"></iframe>
+
+<input type="button" onclick="mylist()" value="GET" />
+<button id="btnExport" onclick="fnExcelReport();"> EXPORT </button>
+
+<table id="myTable" style="border: 1px solid black;">
+  <thead><tr><th>Title</th><th>ID</th><th>Price</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  $(document).ready(function()
+    {
+    
+    });
+function mylist()
+{
+      var row="";
+      $.ajax({
+            url:_spPageContextInfo.webAbsoluteUrl + "/_api/web/lists/getbytitle('Entry')/items",
+            type: "GET",
+            headers:  
+            {
+              "Accept":"application/json; odata=verbose",     
+              "Content-Type": "application/json; odata=verbose"
+            },
+            success: function(data)   
+            {
+              var result = data.d.results;
+              //var htmlTable="<table><thead><tr><th>Title</th><th>Title</th><th>ID</th><th>Price</th></tr></thead><tbody>";
+            
+              $.each(result, function(key, item)  
+              {
+                row = row + '<tr><td>'+ item.Title + '</td><td>'+item.Id+'</td><td>' + item.Price + '</td></tr>';
+              }); 
+              // $("#myTable tbody").html(row);
+              //htmlTable+="</tbody></table>";
+              $('#myTable tbody').empty();	
+              $('#myTable tbody').append(row);
+              //fnExcelReport(row);
+            },
+            error: function(data,error) { console.log(JSON.stringify(error)); }
+      });
+}  
+
+function fnExcelReport()
+{
+    debugger; 
+    var tab_text="<table border='2px'><tr bgcolor='#87AFC6'>";
+          var textRange; var j=0;
+          tab = document.getElementById('myTable'); // id of table
+
+          for(j = 0 ; j < tab.rows.length ; j++) 
+          {     
+                tab_text=tab_text+tab.rows[j].innerHTML+"</tr>";
+                //tab_text=tab_text+"</tr>";
+          }
+
+          tab_text=tab_text+"</table>";
+          tab_text= tab_text.replace(/<A[^>]*>|<\/A>/g,"");//remove if u want links in your table
+          tab_text= tab_text.replace(/<img[^>]*>/gi,""); // remove if u want images in your table
+          tab_text= tab_text.replace(/<input[^>]*>|<\/input>/gi,""); // reomves input params
+
+          var ua = window.navigator.userAgent;
+          var msie = ua.indexOf("MSIE "); 
+
+          if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./))      // If Internet Explorer
+          {
+                txtArea1.document.open("txt/html","replace");
+                txtArea1.document.write(tab_text);
+                txtArea1.document.close();
+                txtArea1.focus(); 
+                sa=txtArea1.document.execCommand("SaveAs",true,"Say Thanks to Sumit.xls");
+         }  
+         else                 //other browser not tested on IE 11
+                sa = window.open('data:application/vnd.ms-excel,' + encodeURIComponent(tab_text));  
+      return (sa);
+}
+    
+</script>
+
+</body>
+</html>

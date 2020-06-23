@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<!---- create Excel file first & add following file Content-----
+Country     State       District
+India   Andra Pradesh   1. Anantapur
+India   Andra Pradesh   2. Chittoor
+India   Andra Pradesh   3. East Godavari
+India   Andra Pradesh   4. Guntur
+India   Andra Pradesh   5. Kadapa
+India   Andra Pradesh   6. Krishna
+-------------------------- -->
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/xlsx.full.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/jszip.js"></script>
+<script type="text/javascript">
+    function Upload() {
+        
+        //Reference the FileUpload element.
+        var fileUpload = document.getElementById("fileUpload");
+ 
+        //Validate whether File is valid Excel file.
+        var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xls|.xlsx)$/;
+        
+        if (regex.test(fileUpload.value.toLowerCase())) {
+            if (typeof (FileReader) != "undefined") {
+                var reader = new FileReader();
+ 
+                //For Browsers other than IE.
+                if (reader.readAsBinaryString) {
+                    reader.onload = function (e) {
+                        ProcessExcel(e.target.result);
+                    };
+                    reader.readAsBinaryString(fileUpload.files[0]);
+                } else {
+                    //For IE Browser.
+                    reader.onload = function (e) {
+                        var data = "";
+                        var bytes = new Uint8Array(e.target.result);
+                        for (var i = 0; i < bytes.byteLength; i++) {
+                            data += String.fromCharCode(bytes[i]);
+                        }
+                        ProcessExcel(data);
+                    };
+                    reader.readAsArrayBuffer(fileUpload.files[0]);
+                }
+            } else {
+                alert("This browser does not support HTML5.");
+            }
+        } else {
+            alert("Please upload a valid Excel file.");
+        }
+    };
+    function ProcessExcel(data) {
+        
+        //Read the Excel File data.
+        var workbook = XLSX.read(data, {    type: 'binary'       });
+        
+        debugger;
+        //Fetch the name of First Sheet.
+        var firstSheet = workbook.SheetNames[0];
+ 
+        //Read all rows from First Sheet into an JSON array.
+        var excelRows = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[firstSheet]);
+ 
+        //Create a HTML Table element.
+        var table = document.createElement("table");
+        table.border = "1";
+        table.id = "tableData";
+        table.align = "center";
+ 
+        //Add the header row.
+        var row = table.insertRow(-1);
+ 
+        //Add the header cells.
+        var headerCell = document.createElement("TH");
+        headerCell.innerHTML = "Country";
+        row.appendChild(headerCell);
+ 
+        headerCell = document.createElement("TH");
+        headerCell.innerHTML = "State/Province";
+        row.appendChild(headerCell);
+ 
+        headerCell = document.createElement("TH");
+        headerCell.innerHTML = "District/City";
+        row.appendChild(headerCell);
+ 
+        //Add the data rows from Excel file.
+        for (var i = 0; i < excelRows.length; i++) {
+            //Add the data row.
+            var row = table.insertRow(-1);
+ 
+            //Add the data cells.
+            var cell = row.insertCell(-1);
+            cell.innerHTML = excelRows[i].Country;
+ 
+            cell = row.insertCell(-1);
+            cell.innerHTML = excelRows[i].State;
+ 
+            cell = row.insertCell(-1);
+            cell.innerHTML = excelRows[i].District;
+        }
+ 
+        var dvExcel = document.getElementById("dvExcel");
+        dvExcel.innerHTML = "";
+        dvExcel.appendChild(table);
+    };
+</script>
+
+</head>
+<body>
+<h1>Hello</h1>
+<br><br><br><center>
+<input type="file" id="fileUpload">
+<input type="button" id="upload" value="Upload" onclick="Upload()">
+<br><br>
+<input type="button" id="post" value="Insert to List" onclick="postData()">
+</center><br>
+<div id="dvExcel"></div>
+
+<!----Excel file Content-----
+Country     State       District
+India   Andra Pradesh   1. Anantapur
+India   Andra Pradesh   2. Chittoor
+India   Andra Pradesh   3. East Godavari
+India   Andra Pradesh   4. Guntur
+India   Andra Pradesh   5. Kadapa
+India   Andra Pradesh   6. Krishna
+---------------------------->
+
+<script>
+function postData()
+{   
+    debugger;
+    //var idValue = document.getElementsByTagName("Table")[1];
+    var idValue = document.getElementsByTagName("Table")[1].getAttribute("id");
+    if (idValue == "tableData") {  /* alert(idValue); */  }
+    else {alert("Please Upload file first!"); return false;}
+
+    //var arr = []; //All text value of first td of every row will store here
+    //$("#tableData tr").each(function(){
+    //arr.push($(this).find("td:first").text()); //put elements into array
+    //});
+    
+    var table = [];
+    $('#tableData tr').each(function(){
+        $(this).find('td').each(function(){ table.push($(this).html());   });
+    });
+    
+    var i=0;
+    while(i<table.length)
+    {
+        var country = table[i];
+        var state = table[i+1];
+        var dist = table[i+2];
+        addItem(country, state, dist);
+        i = i+3;
+    }
+    alert('Please check list!');
+}
+
+var listName = "ExcelData";
+var siteUrl = _spPageContextInfo.webAbsoluteUrl;
+var url = siteUrl + "/_api/lists/getbytitle('" + listName + "')/items"
+var xRequestDigest = $("#__REQUESTDIGEST").val();
+
+function addItem(country, state, dist) {
+    
+    var AllData = JSON.stringify({
+        __metadata: {   type: "SP.Data." + listName + "ListItem"      },
+        "Title": country,
+        "StateOrProvince": state,
+        "DistrictsOrCities": dist
+    });
+    $.ajax({
+        url: url,
+        method: "POST",
+        data: AllData,
+        async: false,
+        headers: {
+            "Accept": "application/json;odata=verbose",
+            "Content-Type": "application/json;odata=verbose",
+            "X-RequestDigest": xRequestDigest
+        },
+        success: function (data) {
+            //alert('Item created successfully!');
+        },
+        error: function (data) {
+            //alert("Failed to create Item! Error: " + data.responseText);
+            return false;
+        }
+    });
+}
+</script>
+
+</body>
+</html>
+<!--    // Add the file to the file collection in the Shared Documents folder.  
+    function addFileToFolder(arrayBuffer)   
+    {  
+  
+        // Get the file name from the file input control on the page.  
+        var parts = fileInput[0].value.split('\\');  
+        var fileName = parts[parts.length - 1];  
+  
+        // Construct the endpoint.  
+        var fileCollectionEndpoint = String.format(  
+            "{0}/_api/sp.appcontextsite(@target)/web/getfolderbyserverrelativeurl('{1}')/files" +  
+            "/add(overwrite=true, url='{2}')?@target='{3}'",  
+            appWebUrl, serverRelativeUrlToFolder, fileName, hostWebUrl);  
+  
+        // Send the request and return the response.  
+        // This call returns the SharePoint file.  
+        return $.ajax({  
+            url: fileCollectionEndpoint,  
+            type: "POST",  
+            data: arrayBuffer,  
+            processData: false,  
+            headers: {  
+                "accept": "application/json;odata=verbose",  
+                "X-RequestDigest": jQuery("#__REQUESTDIGEST").val(),  
+                "content-length": arrayBuffer.byteLength  
+            }  
+        });  
+    }  
+    -->
